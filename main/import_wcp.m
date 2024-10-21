@@ -52,7 +52,7 @@ end
 wcp=[];
 fid = fopen(fn);
 tline = fgetl(fid);
-while length(tline)<200 % better condition here?
+while length(tline)<100 % better condition here?
     in=find(tline=='=');
     if not(isempty(in))
         pre=tline(1:in-1);

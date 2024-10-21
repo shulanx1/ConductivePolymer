@@ -1,12 +1,13 @@
-function [params,Vsupra, f, I, AP_amp] = sub_and_supra_classify(base_path, date, cell, idx_f, if_plot, if_save)
+function [params,Vsupra, f, I, AP_amp, AP_width] = sub_and_supra_classify(base_path, date, cell, idx_f, if_plot, if_save, save_path)
 % Vsupra: representive spike waveform (normalized)
 % params: [input resistance, sag ratio, burstyness, min. isi at rhobase, Cm(fitted), Rm(fitted)]
 if nargin < 5, if_plot = 0; end
-if nargin < 6, if_save = 0; end
+if nargin < 6, if_save = 1; end
 
 
 preflix = strcat(strcat(date(5:6), date(1:4)),'_001');
 path = fullfile(base_path, date, strcat('cell', string(cell)));
+if nargin < 7, save_path = path; end 
 filename = sprintf('%s.sub and supra_Ch2.%d.wcp', preflix,idx_f);
 try
     out=import_wcp(fullfile(path, filename),'debug');
@@ -79,27 +80,27 @@ for i = 1:n_recording
     end
     FR2(i) = length(spike_time2{i})/0.5;
 end
-if isempty(cell2mat(spike_time2))
-    for i = 1:n_recording
-    Vm2(:,i) = out.S{1}(:,i);
-    Im2(:,i) = out.S{2}(:,i);
-    spike_time2{i} = [];
-    spike_waveform2{i} = [];
-    d_Vm2 = diff(Vm2(:,i));
-    dv2(i) = d_Vm2(floor(2/dt)+1);
-    V_sub2(i) = mean(Vm2(floor(0.7/dt)+1:floor(1/dt),i));
-    Vrest2(i) = mean(Vm2(1:floor(0.5/dt) ,i));
-    for n = floor(2/dt)+1:floor(2.5/dt)
-        if Vm2(n, i)>thr2 && Vm2(n-1, i)<=thr2          
-            [~, peak] = max(Vm2(n-10:n+10,i));
-            spike_time2{i} = [spike_time2{i}, (n-9+peak)*dt]; % spike time in s
-            spike_idx_temp = (n-9+peak);
-            spike_waveform2{i} = [spike_waveform2{i}, Vm2(spike_idx_temp-10:spike_idx_temp+100,i)];             
-        end
-    end
-    FR2(i) = length(spike_time2{i})/0.5;
-    end
-end
+% if isempty(cell2mat(spike_time2))
+%     for i = 1:n_recording
+%     Vm2(:,i) = out.S{1}(:,i);
+%     Im2(:,i) = out.S{2}(:,i);
+%     spike_time2{i} = [];
+%     spike_waveform2{i} = [];
+%     d_Vm2 = diff(Vm2(:,i));
+%     dv2(i) = d_Vm2(floor(2/dt)+1);
+%     V_sub2(i) = mean(Vm2(floor(0.7/dt)+1:floor(1/dt),i));
+%     Vrest2(i) = mean(Vm2(1:floor(0.5/dt) ,i));
+%     for n = floor(2/dt)+1:floor(2.5/dt)
+%         if Vm2(n, i)>thr2 && Vm2(n-1, i)<=thr2          
+%             [~, peak] = max(Vm2(n-10:n+10,i));
+%             spike_time2{i} = [spike_time2{i}, (n-9+peak)*dt]; % spike time in s
+%             spike_idx_temp = (n-9+peak);
+%             spike_waveform2{i} = [spike_waveform2{i}, Vm2(spike_idx_temp-10:spike_idx_temp+100,i)];             
+%         end
+%     end
+%     FR2(i) = length(spike_time2{i})/0.5;
+%     end
+% end
 
 Istep_sub = -50:10:10*(n_recording-1)-50;
 P2 = polyfit(Istep_sub, dv2,1);
@@ -194,6 +195,7 @@ end
 
 Vsupra = [];
 AP_amp = [];
+AP_width = [];
 if ~isempty(idx_s)
     if length(spike_time2)>=12
         idx_range = linspace(min(idx_s), 12, 4);
@@ -227,13 +229,26 @@ if ~isempty(idx_s)
         [~, loc] = max(l);
         spike_temp = waveform_temp(:,loc)-mean(Vm2(floor(2/dt)+1:floor(2.5/dt), i));
         Vsupra = [Vsupra;(spike_temp-min(spike_temp))/(max(spike_temp)-min(spike_temp))];
-        AP_amp = [AP_amp, max(spike_waveform2{i}(:,idx_waveform))-Vrest2(round(idx_range(3)))];
+        spike_waveform = spike_waveform2{i}(:,idx_waveform)-spike_waveform2{i}(1,idx_waveform);
+        for ii = 1:size(spike_waveform,2)
+            [amp_temp,max_amp] = max(spike_waveform(:,ii));
+            [~,II] = sort(abs(spike_waveform(:,ii)-amp_temp/2));
+            b = find(II<max_amp);
+            a = find(II>max_amp);
+            try
+                halfwidth = (II(a(1))-II(b(1)))*dt*1000; %in ms
+                AP_width = [AP_width,halfwidth];
+            catch
+            end
+        end
+%         AP_amp = [AP_amp, max(spike_waveform2{i}(:,idx_waveform))-Vrest2(round(idx_range(3)))];
+        AP_amp = [AP_amp, max(spike_waveform2{i}(:,idx_waveform))-spike_waveform2{i}(1,idx_waveform)];
     end
 end
 
 if if_plot
     t = (-0.5:dt:1)*1e3;
-    idx_plot = [1,5,10];
+    idx_plot = [1,5,9];
 
     figure
     hold on
@@ -245,10 +260,10 @@ if if_plot
     for i =  1:length(idx_plot)
     plot(t, Vm2(floor(1.5/dt):floor(3/dt),idx_plot(i)),'Color', colors_p(idx_plot(i),:,:))
     end
-    xlim([-250, 750])
+    xlim([-500, 1000])
 end
 if if_save
-    save(fullfile(path,sprintf('sub_and_supra_classify_%d.mat', idx_f)),'params', 'Vsupra', 'Istep_supra','spike_time2', 'f','I', 't','Vrest2','isi_hist', 'edges')
+    save(fullfile(save_path,sprintf('%s_cell%s_sub_and_supra_classify_%d.mat',date, string(cell), idx_f)),'params', 'Vsupra', 'Istep_supra','spike_time2', 'f','I', 't','Vrest2','isi_hist', 'edges','AP_amp','AP_width')
 end
 
 fprintf('finished cell%s, from date %s, file %s\n',string(cell), date, filename)

@@ -1,9 +1,10 @@
-function [K_amp_adj,Ca_amp, Vstep] = ca_activation_ttx(base_path, date, cell_idx, idx_f, if_plot, if_save, color)
+function [K_amp_adj,Ca_amp, Vstep] = ca_activation_ttx(base_path, date, cell_idx, idx_f, if_plot, if_save, save_path, color)
 if nargin < 5, if_plot = 0; end
 if nargin < 6, if_save = 0; end
-if nargin < 7, color = 'darkblue'; end
+if nargin < 8, color = 'darkblue'; end
 preflix = strcat(strcat(date(5:6), date(1:4)),'_001');
 path = fullfile(base_path, date, strcat('cell', string(cell_idx)));
+if nargin < 7, save_path = path; end
 filename = sprintf('%s.ca_activation.%d.wcp', preflix,idx_f);
 
 try
@@ -35,11 +36,11 @@ pulse_end = pulse_start(2);
 pulse_start = pulse_start(1);
 
 for i = 1:n_recording
-    I_baseline = mean(out.S{3}(1:pulse_start,i));
-    Im(:,i) = out.S{3}(:,i)-I_baseline;
+    I_baseline(i) = mean(out.S{3}(1:pulse_start,i));
+    Im(:,i) = out.S{3}(:,i)-I_baseline(i);
     Im(:,i) = Im(:,i)-mean(Im(pulse_end-100:pulse_end, i));
 
-    K_amp(i) = mean(out.S{3}(pulse_end-100:pulse_end,i)-I_baseline);
+    K_amp(i) = mean(out.S{3}(pulse_end-100:pulse_end,i)-I_baseline(i));
     Ca_amp(i) = min(Im(pulse_start+200:pulse_start + 2000, i));
 end
 Im_orig = out.S{3};
@@ -63,8 +64,9 @@ if if_plot
 %     xlim([0.498,0.508])
 %     ylim([-3500,1000])
     figure
-    for i = 1:n_recording
-        plot(out.T, Im(:,i), 'Color', colors(i,:))
+    for i = 13%1:n_recording
+%         plot(out.T, out.S{3}(:,i)-I_baseline(i)-P(1)*(out.S{4}(:,i))-P(2), 'Color', colors(i,:))
+        plot(out.T, out.S{3}(:,i)-I_baseline(i), 'Color', colors(i,:))
         hold on
     end
     xlim([0.5, 0.6])
@@ -72,7 +74,7 @@ if if_plot
 end
 
 if if_save
-    save(fullfile(path,sprintf('na_activation_%d.mat', idx_f)),'Im','Vm','Vstep','Im_orig','K_amp_adj', 'Ca_amp');
+    save(fullfile(save_path,sprintf('%s_cell%s_na_activation_%d.mat', date,string(cell_idx),idx_f)),'Im','Vm','Vstep','Im_orig','K_amp_adj', 'Ca_amp');
 end
 fprintf('finished cell%s, from date %s, file %s\n',string(cell_idx), date, filename)
 end

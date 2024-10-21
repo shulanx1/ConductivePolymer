@@ -38,9 +38,13 @@ for i = 1:N
     if color_idx == 0
         color_idx = size(colors, 1);
     end
-    plot(X{i}, mean(data{i},2), 'Color', colors(color_idx,:),'Linewidth', 2)
+    plot(X{i}, nanmean(data{i},2), 'Color', colors(color_idx,:),'Linewidth', 2)
+    sample_size = zeros(size(data{i},1),1);
+    for j = 1:size(data{i},1)
+        sample_size(j) = length(find(~isnan(data{i}(j,:))));
+    end
     hold on
-    plot(X{i}, mean(data{i},2) + std(data{i},[],2)/sqrt(size(data{i}, 1)), 'Color', colors(color_idx,:),'Linewidth', 0.5)
-    plot(X{i}, mean(data{i},2) - std(data{i},[],2)/sqrt(size(data{i}, 1)), 'Color', colors(color_idx,:),'Linewidth', 0.5)
+    plot(X{i}, nanmean(data{i},2) + nanstd(data{i},[],2)./sqrt(sample_size), 'Color', colors(color_idx,:),'Linewidth', 0.5)
+    plot(X{i}, nanmean(data{i},2) - nanstd(data{i},[],2)./sqrt(sample_size), 'Color', colors(color_idx,:),'Linewidth', 0.5)
 end
 end
