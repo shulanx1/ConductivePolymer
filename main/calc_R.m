@@ -35,6 +35,16 @@ for i = 1:length(idx_falling)-1
     I_rise(i) = mean(Im(idx_rising(i)+20:idx_falling(i+1)-20));
 end
 
+if isempty(find(~isnan(I_fall)))||isempty(find(~isnan(I_rise)))
+    I_fall = zeros(1, length(idx_falling)-1);
+    I_rise = zeros(1, length(idx_falling)-1);
+    idx_down = idx_falling(1:end-1);
+    for i = 1:length(idx_falling)-1
+        I_fall(i) = mean(Im(idx_falling(i)+20:idx_rising(i+1)-20));
+        I_rise(i) = mean(Im(idx_rising(i)+20:idx_falling(i)-20));
+    end
+end
+
 R_down = 5000./(I_rise-I_fall);
 % remove scanning artifact
 idx_rmv = find(abs(diff(R_down))>50)+1;

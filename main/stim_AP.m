@@ -24,7 +24,8 @@ t = (-500*dt:dt:2500*dt)*1e3;
 
 
 spike_time2 = {};
-thr2 = -10;%-10;
+%thr2 = -10;%-10;
+thr2 = 0; % idx = 122:127 nPBDF
 spike_waveform2 = {};
 FR2 = zeros(1, n_recording);
 stim_time_idx = {};
@@ -69,6 +70,7 @@ no_stim_FR = nan(n_recording, length(stim_time{1})+1);
 
 for i = 1:n_recording
     for n = 1:length(stim_time{i})
+        stim_power(i,n) = mean(power(floor(stim_time{i}(n)/dt):floor(stim_end{i}(n+1)/dt),i));
         stim_spike_time{i,n} = spike_time2{i}(find((spike_time2{i}>=stim_time{i}(n))&(spike_time2{i}<stim_end{i}(n+1))));
         stim_FR(i,n) = length(stim_spike_time{i,n})/(stim_end{i}(n+1)-stim_time{i}(n));
         no_stim_spike_time{i,n} = spike_time2{i}(find((spike_time2{i}>=stim_end{i}(n))&(spike_time2{i}<stim_time{i}(n))));
@@ -79,20 +81,30 @@ for i = 1:n_recording
 end
 
 
+
 if if_plot
-%     figure,plot(out.T,Vm2(:,1),'k')
+    figure
+    for i = 1:length(stim_time{1})
+        plot(out.T-stim_time{1}(i),Vm2(:,1),'k')
+        hold on
+    end
+    xlim([-1,2])
+    y1 = ylim();
+    yplot = y1(1):0.01:y1(2);
+
+    plot(0*ones(size(yplot)),yplot,'Color',[0.5,0.5,0.5])
+    plot((stim_end{1}(1+1)-stim_time{1}(1))*ones(size(yplot)),yplot,'Color',[0.5,0.5,0.5])
+
+%     addpath(genpath(fullfile(pwd, 'plotSpikeRaster_v1.2')));
+%     figure,[xPoints, yPoints] = plotSpikeRaster(spike_time2,'PlotType','vertline');
 %     y1 = ylim();
 %     yplot = y1(1):0.01:y1(2);
 %     hold on
-    addpath(genpath(fullfile(pwd, 'plotSpikeRaster_v1.2')));
-    figure,[xPoints, yPoints] = plotSpikeRaster(spike_time2,'PlotType','vertline');
-    y1 = ylim();
-    yplot = y1(1):0.01:y1(2);
-    hold on
-    for i = 1:length(stim_time{1})
-        plot(stim_time{1}(i)*ones(size(yplot)),yplot,'Color',[0.5,0.5,0.5])
-        plot(stim_end{1}(i+1)*ones(size(yplot)),yplot,'Color',[0.5,0.5,0.5])
-    end
+%     for i = 1:length(stim_time{1})
+%         plot(stim_time{1}(i)*ones(size(yplot)),yplot,'Color',[0.5,0.5,0.5])
+%         plot(stim_end{1}(i+1)*ones(size(yplot)),yplot,'Color',[0.5,0.5,0.5])
+%     end
+    xlim
 end
 
 
@@ -101,6 +113,17 @@ no_stim = no_stim_FR;
 pre_stim_FR = no_stim_FR(1);
 post_stim_FR = nanmean(no_stim_FR(2:end));
 stim_FR = nanmean(stim_FR);
+
+if (length(find(power<=5))<3)&(length(find(power<=3))>0)
+    idx_rmv = find(power<=3);
+    dur_stim(idx_rmv) = [];
+    no_stim(idx_rmv) = [];
+    temp1 = no_stim_FR(2:end);
+    temp1(idx_rmv) = [];
+    post_stim_FR = nanmean(temp1);
+    stim_FR = nanmean(dur_stim);
+end
+
 if if_save
     save(fullfile(save_path,sprintf('%s_cell%s_power_long_%d.mat', date, string(cell_idx), idx_f)),'idx_f','Vm2','spike_time2', 'stim_time','stim_end','pre_stim_FR','stim_FR','post_stim_FR','dur_stim','no_stim','stim_spike_time','no_stim_spike_time')
 

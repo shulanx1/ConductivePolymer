@@ -26,8 +26,8 @@ if ~iscell(y)
     for i = 1:size(y,2)
         data{i} = y(:,i);
         data{i}(isoutlier(y(:,i))) = [];
-        mean_y(i) = mean(data{i});
-        sem_y(i) = std(data{i})/sqrt(length(data{i}));
+        mean_y(i) = nanmean(data{i});
+        sem_y(i) = nanstd(data{i})/sqrt(length(find(~isnan(data{i}))));
     end
     bar([1:length(data)],mean_y,'FaceColor','None','EdgeColor','k','LineWidth',1)
     hold on
@@ -47,8 +47,8 @@ else
     data = y;
     for i = 1:size(y,2)
         data{i}(isoutlier(data{i})) = [];
-        mean_y(i) = mean(data{i});
-        sem_y(i) = std(data{i})/sqrt(length(data{i}));
+        mean_y(i) = nanmean(data{i});
+        sem_y(i) = nanstd(data{i})/sqrt(length(find(~isnan(data{i}))));
     end
     f = figure();
     size_x = (0.4 + length(y)*0.15)/2; % figure size in inches

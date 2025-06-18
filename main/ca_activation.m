@@ -1,4 +1,4 @@
-function [Na_amp_net,Na_amp, Vstep] = na_activation(base_path, date, cell_idx, idx_f, idx_ttx, if_plot, if_save, save_path,if_opto, color)
+function [Na_amp_net,Na_amp, Vstep] = ca_activation(base_path, date, cell_idx, idx_f, idx_ttx, if_plot, if_save, save_path,if_opto, color)
 if nargin < 6, if_plot = 0; end
 if nargin < 7, if_save = 0; end
 if nargin < 9, if_opto = 0; end
@@ -6,21 +6,21 @@ if nargin < 10, color = 'darkblue'; end
 preflix = strcat(strcat(date(5:6), date(1:4)),'_001');
 path = fullfile(base_path, date, strcat('cell', string(cell_idx)));
 if nargin <8, save_path = path; end
-filename = sprintf('%s.na_activation.%d.wcp', preflix,idx_f);
-if if_opto, filename = sprintf('%s.na_activation_opto.%d.wcp', preflix,idx_f); end
+filename = sprintf('%s.ca_activation.%d.wcp', preflix,idx_f);
+if if_opto, filename = sprintf('%s.ca_activation_opto.%d.wcp', preflix,idx_f); end
 
 try
     out=import_wcp(fullfile(path, filename),'debug');
 catch
     date_plus_one = next_date_string(date);
     preflix = strcat(strcat(date_plus_one(5:6),date_plus_one(1:4)),'_001');
-    filename = sprintf('%s.na_activation.%d.wcp', preflix,idx_f);
-    if if_opto, filename = sprintf('%s.na_activation_opto.%d.wcp', preflix,idx_f); end
+    filename = sprintf('%s.ca_activation.%d.wcp', preflix,idx_f);
+    if if_opto, filename = sprintf('%s.ca_activation_opto.%d.wcp', preflix,idx_f); end
     out=import_wcp(fullfile(path, filename),'debug');
 end
 if ~isnan(idx_ttx)
-    filename_ttx = sprintf('%s.na_activation.%d.wcp', preflix,idx_ttx);
-    if if_opto, filename = sprintf('%s.na_activation_opto.%d.wcp', preflix,idx_ttx); end
+    filename_ttx = sprintf('%s.ca_activation.%d.wcp', preflix,idx_ttx);
+    if if_opto, filename = sprintf('%s.ca_activation_opto.%d.wcp', preflix,idx_ttx); end
     out_ttx=import_wcp(fullfile(path, filename_ttx),'debug');
 end
 
@@ -41,7 +41,7 @@ t = 0:dt:dt*(size(Vm,1)-1);
 Na_amp_net = zeros(1, n_recording);
 Na_amp = zeros(1, n_recording);
 
-Vstep = [-90:10:10];
+Vstep = [-90:10:50];
 pulse_start = find(abs(diff(Vm(:,1)))>5);
 pulse_end = pulse_start(2);
 pulse_start = pulse_start(1);
@@ -88,9 +88,9 @@ end
 
 if if_save
     if ~isnan(idx_ttx)
-        save(fullfile(save_path,sprintf('%s_cell%s_na_activation_%d.mat', date, string(cell_idx),idx_f)),'idx_f','Im','Vm', 'Im_ttx', 'Vstep','Na_amp','Na_amp_net','Im_net');
+        save(fullfile(save_path,sprintf('%s_cell%s_ca_activation_%d.mat', date, string(cell_idx),idx_f)),'idx_f','Im','Vm', 'Im_ttx', 'Vstep','Na_amp','Na_amp_net','Im_net');
     else
-        save(fullfile(save_path,sprintf('%s_cell%s_na_activation_%d.mat', date, string(cell_idx),idx_f)),'idx_f','Im','Vm', 'Vstep','Na_amp','Na_amp_net','Im_net');
+        save(fullfile(save_path,sprintf('%s_cell%s_ca_activation_%d.mat', date, string(cell_idx),idx_f)),'idx_f','Im','Vm', 'Vstep','Na_amp','Na_amp_net','Im_net');
     end
 end
 fprintf('finished cell%s, from date %s, file %s\n',string(cell_idx), date, filename)

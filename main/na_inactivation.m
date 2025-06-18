@@ -1,12 +1,13 @@
-function [Na_act_amp_net,Na_act_amp,Na_in_amp_net, Na_in_amp, K_amp_adj, Vstep] = na_inactivation(base_path, date, cell_idx, idx_f, idx_ttx, if_plot, if_save, save_path,color)
+function [Na_act_amp_net,Na_act_amp,Na_in_amp_net, Na_in_amp, K_amp_adj, Vstep] = na_inactivation(base_path, date, cell_idx, idx_f, idx_ttx, if_plot, if_save, save_path, if_opto, color)
 if nargin < 6, if_plot = 0; end
 if nargin < 7, if_save = 0; end
-if nargin < 9, color = 'darkblue'; end
+if nargin < 9, if_opto = 0; end
+if nargin < 10, color = 'darkblue'; end
 preflix = strcat(strcat(date(5:6), date(1:4)),'_001');
 path = fullfile(base_path, date, strcat('cell', string(cell_idx)));
 if nargin < 8, save_path = path; end
 filename = sprintf('%s.na_inactivation.%d.wcp', preflix,idx_f);
-
+if if_opto, filename = sprintf('%s.na_inactivation_opto.%d.wcp', preflix,idx_f);end
 
 try
     out=import_wcp(fullfile(path, filename),'debug');
@@ -14,11 +15,13 @@ catch
     date_plus_one = next_date_string(date);
     preflix = strcat(strcat(date_plus_one(5:6),date_plus_one(1:4)),'_001');
     filename = sprintf('%s.na_inactivation.%d.wcp', preflix,idx_f);
+    if if_opto, filename = sprintf('%s.na_inactivation_opto.%d.wcp', preflix,idx_f);end
     out=import_wcp(fullfile(path, filename),'debug');
 end
 
 if ~isnan(idx_ttx)
     filename_ttx = sprintf('%s.na_inactivation.%d.wcp', preflix,idx_ttx);
+    if if_opto, filename_ttx = sprintf('%s.na_inactivation_opto.%d.wcp', preflix,idx_ttx);end
     out_ttx=import_wcp(fullfile(path, filename_ttx),'debug');
 end
 

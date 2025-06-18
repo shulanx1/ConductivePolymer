@@ -48,9 +48,9 @@ R_baseline = mean(R_down(1:10));
 
 power_down = power(idx_down);
 
-idx_laser_start = find(diff(power)>=20);
+idx_laser_start = find(diff(power)>=10);
 idx_laser_start(find(diff(idx_laser_start)<=1)+1) = [];
-idx_laser_end = find(diff(power)<-20);
+idx_laser_end = find(diff(power)<-10);
 idx_laser_end(find(diff(idx_laser_end)<=1)+1) = [];
 
 if isempty(idx_laser_start)
@@ -73,14 +73,16 @@ temp = filtfilt(b1, a1, temp);
 n_smooth = 1;
 for n = 1:n_smooth
 idx_rmv = find(abs(diff(temp))>=15)+1;
-for i = 1:length(idx_laser_start)
-    idx_rmv(find(abs(idx_rmv-idx_laser_start(i))<=2)) = [];
-    idx_rmv(find(abs(idx_rmv-idx_laser_end(i))<=2)) = [];
-end
-for i = 1:length(idx_rmv)
-    idx_smooth = max(1,idx_rmv(i)-5):min(idx_rmv(i)+5, length(temp));
-    idx_smooth = setdiff(idx_smooth,idx_rmv);
-    temp(idx_rmv(i)) = mean(temp(idx_smooth));
+if ~isempty(idx_rmv)
+    for i = 1:length(idx_laser_start)
+        idx_rmv(find(abs(idx_rmv-idx_laser_start(i))<=2)) = [];
+        idx_rmv(find(abs(idx_rmv-idx_laser_end(i))<=2)) = [];
+    end
+    for i = 1:length(idx_rmv)
+        idx_smooth = max(1,idx_rmv(i)-5):min(idx_rmv(i)+5, length(temp));
+        idx_smooth = setdiff(idx_smooth,idx_rmv);
+        temp(idx_rmv(i)) = mean(temp(idx_smooth));
+    end
 end
 end
 % [yupper,ylower] = envelope(temp-temp_baseline, 1,'peak');

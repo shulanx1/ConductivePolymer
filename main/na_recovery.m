@@ -71,8 +71,8 @@ for i = 1:n_recording
         Im_net(:,i) = Im(:,i)-Im(pulse_end,i);
     end
     
-    [Na_amp_net(i),] = min(Im_net(pulse_start:pulse_start + 500, i));
-    Na_amp(i) = min(Im(pulse_start:pulse_start + 500, i));
+    [Na_amp_net(i),] = min(Im_net(pulse_start+10:pulse_start + 500, i));
+    Na_amp(i) = min(Im(pulse_start+10:pulse_start + 500, i));
 
 end
 

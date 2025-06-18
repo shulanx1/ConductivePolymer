@@ -5,14 +5,15 @@ close all
 addpath(genpath(fullfile(pwd,'main')))
 addpath(genpath(fullfile(pwd,'plotting')))
 
-M = readtable('E:\data\polymer\pool.xlsx', 'Sheet','excitability');
+M = readtable('E:\data\polymer\pool.xlsx', 'Sheet','excitability_Krich');
 % M = readtable('E:\data\dendritic patch\pool\pass_filter.xlsx', 'Sheet','morph');
 base_path = 'E:\data';
-save_path = 'E:\data\polymer\sub&supra';
+save_path = 'E:\data\polymer\sub&supra_Krich';
 if ~exist(save_path, 'dir')
     mkdir(save_path)
 end
 Rm = [];
+RMP = [];
 Ihold = [];
 Rm_fit = [];
 Cm = [];
@@ -27,6 +28,7 @@ for i = 1:size(M, 1)
     [params_post_temp, ~, f_post_temp, I_temp, AP_amp_post_temp, AP_width_post_temp] = sub_and_supra_classify(data_path, M.date{i}, M.cell(i), M.post(i),0,1,save_path);
     Rm = [Rm;[params_pre_temp(1), params_post_temp(1)]];
     Cm = [Cm;[params_pre_temp(5), params_post_temp(5)]];
+    RMP = [RMP;[params_pre_temp(8), params_post_temp(8)]];
     AP_amp = [AP_amp; [median(AP_amp_pre_temp), median(AP_amp_post_temp)]];
     AP_width = [AP_width; [median(AP_width_pre_temp), median(AP_width_post_temp)]];
     Rm_fit = [Rm_fit;[params_pre_temp(6), params_post_temp(6)]];
@@ -45,8 +47,8 @@ end
 % f_post(:,idx_rmv) = [];
 % AP_amp(idx_rmv,:) = [];
 
-colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
-% colors = [[0,0,0];[159,186,149]/255]; % color for K rich polymer
+% colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
+colors = [[0,0,0];[159,186,149]/255]; % color for K rich polymer
 boxplot_pairwise(Rm, colors)
 % boxplot_pairwise(Rm_fit.*Cm/1e3)
 boxplot_pairwise(Cm, colors)
@@ -54,9 +56,9 @@ barplot_pairwise(AP_amp((M.withttx==0)&(sum(isnan(AP_amp),2)==0),:), colors), yl
 barplot_pairwise(AP_width((M.withttx==0)&(sum(isnan(AP_width),2)==0),:), colors), ylim([1,3.5])
 barplot_pairwise(-Ihold, colors)
 lineplot_with_shaded_errorbar(I_temp, {f_pre(:,find(M.withttx==0)),f_post(:,find(M.withttx==0))}, colors), xlim([0,350])
-[data_table, within_design] = gen_table_for_ranova(I_temp, {f_pre(:,find(M.withttx==0)),f_post(:,find(M.withttx==0))});
+[data_table, within_design] = gen_table_for_ranova(I_temp((I_temp>0)&(I_temp<=350)), {f_pre((I_temp>0)&(I_temp<=350),find(M.withttx==0)),f_post((I_temp>0)&(I_temp<=350),find(M.withttx==0))});
 
-rm = fitrm(data_table,'measurements1-measurements24 ~ 1', 'WithinDesign', within_design);
+rm = fitrm(data_table,'measurements1-measurements14 ~ 1', 'WithinDesign', within_design);
 AT = ranova(rm, 'WithinModel','treatment*voltage');
 anova_table = anovaTable(AT, 'DV');
 disp(anova_table);
@@ -66,7 +68,7 @@ p = zeros(1, length(I_temp));
 for i = 1:length(I_temp)
     [p(i),~] = signrank(f_pre(i,find(M.withttx==0))',f_post(i,find(M.withttx==0))');
 end
-save(fullfile(save_path,'excitability_pool.mat'),'Rm','Cm','AP_amp','AP_width', 'Ihold','I_temp','f_pre', 'f_post', 'anova_table', 'p', 'M')
+save(fullfile(save_path,'excitability_pool_Krich.mat'),'RMP','Rm','Cm','AP_amp','AP_width', 'Ihold','I_temp','f_pre', 'f_post', 'anova_table', 'p', 'M')
 %% excitability_pdot_PSS
 clear all
 close all
@@ -113,9 +115,9 @@ barplot_pairwise(AP_amp((M.withttx==0)&(sum(isnan(AP_amp),2)==0),:), colors), yl
 barplot_pairwise(AP_width((M.withttx==0)&(sum(isnan(AP_amp),2)==0),:), colors), ylim([1,3.5])
 barplot_pairwise(-Ihold, colors)
 lineplot_with_shaded_errorbar(I_temp, {f_pre(:,find(M.withttx==0)),f_post(:,find(M.withttx==0))}, colors), xlim([0,350])
-[data_table, within_design] = gen_table_for_ranova(I_temp, {f_pre(:,find(M.withttx==0)),f_post(:,find(M.withttx==0))});
+[data_table, within_design] = gen_table_for_ranova(I_temp((I_temp>0)&(I_temp<=350)), {f_pre((I_temp>0)&(I_temp<=350),find(M.withttx==0)),f_post((I_temp>0)&(I_temp<=350),find(M.withttx==0))});
 
-rm = fitrm(data_table,'measurements1-measurements24 ~ 1', 'WithinDesign', within_design);
+rm = fitrm(data_table,'measurements1-measurements14 ~ 1', 'WithinDesign', within_design);
 AT = ranova(rm, 'WithinModel','treatment*voltage');
 anova_table = anovaTable(AT, 'DV');
 disp(anova_table);
@@ -125,17 +127,17 @@ p = zeros(1, length(I_temp));
 for i = 1:length(I_temp)
     [p(i),~] = signrank(f_pre(i,find(M.withttx==0))',f_post(i,find(M.withttx==0))');
 end
-save(fullfile(save_path,'excitability_pool.mat'),'Rm','Cm','AP_amp', 'AP_width','Ihold','I_temp','f_pre', 'f_post', 'anova_table', 'p', 'M')
+save(fullfile(save_path,'excitability_Pedot_pool.mat'),'Rm','Cm','AP_amp', 'AP_width','Ihold','I_temp','f_pre', 'f_post', 'anova_table', 'p', 'M')
 %% na activation
 clear all
 close all
 
 addpath(genpath(fullfile(pwd,'main')))
 addpath(genpath(fullfile(pwd,'plotting')))
-M = readtable('E:\data\polymer\pool.xlsx', 'Sheet','na_activation_pedotPSS');
+M = readtable('E:\data\polymer\pool.xlsx', 'Sheet','na_activation');
 % M = readtable('E:\data\dendritic patch\pool\pass_filter.xlsx', 'Sheet','morph');
 base_path = 'E:\data';
-save_path = 'E:\data\polymer\na_activation_pedotPSS';
+save_path = 'E:\data\polymer\na_activation';
 if ~exist(save_path, 'dir')
     mkdir(save_path)
 end
@@ -145,11 +147,12 @@ Na_amp_post = zeros(size(M,1),11);
 Vstep = zeros(size(M,1),11);
 for i = 1:size(M, 1)
     data_path = fullfile(base_path,M.folder(i));
-%     [Na_amp_pre(i,:), ~, ~] = na_activation(data_path, M.date{i}, M.cell(i), M.pre(i), M.ttx(i), 0, 1, save_path);
-%     [Na_amp_post(i,:), ~, Vstep(i,:)] = na_activation(data_path, M.date{i}, M.cell(i), M.post(i), M.ttx(i), 0,1,save_path);
-    [Na_amp_pre(i,:), ~, ~] = na_activation(data_path, M.date{i}, M.cell(i), M.pre(i), nan, 0, 1, save_path);
-    [Na_amp_post(i,:), ~, Vstep(i,:)] = na_activation(data_path, M.date{i}, M.cell(i), M.post(i), nan, 0,1,save_path);
+    [Na_amp_pre(i,:), ~, ~] = na_activation(data_path, M.date{i}, M.cell(i), M.pre(i), M.ttx(i), 0, 0, save_path);
+    [Na_amp_post(i,:), ~, Vstep(i,:)] = na_activation(data_path, M.date{i}, M.cell(i), M.post(i), M.ttx(i), 0,0,save_path);
+%     [Na_amp_pre(i,:), ~, ~] = na_activation(data_path, M.date{i}, M.cell(i), M.pre(i), nan, 0, 1, save_path);
+%     [Na_amp_post(i,:), ~, Vstep(i,:)] = na_activation(data_path, M.date{i}, M.cell(i), M.post(i), nan, 0,1,save_path);
 end
+%%
 G_pre = Na_amp_pre./(Vstep-53.9);
 G_post = Na_amp_post./(Vstep-53.9);
 ft = fittype('G*(1/(1+exp(-(x-Vh)/k)))', 'independent', 'x');
@@ -180,18 +183,18 @@ for i = 1:length(Vstep)
     [p(i),~] = signrank(G_pre(:,i), G_post(:,i));
 end
 
-save(fullfile(save_path,'na_activation_pedotPSS_pool.mat'),'G_pre','G_post','Vstep','anova_table','p','M')
+save(fullfile(save_path,'na_activation_pool_pedotPSS.mat'),'G_pre','G_post','Vstep','anova_table','p','M')
 %% na inactivation
-clear all
-close all
+% clear all
+% close all
 
 addpath(genpath(fullfile(pwd,'main')))
 addpath(genpath(fullfile(pwd,'plotting')))
 
-M = readtable('E:\data\polymer\pool.xlsx', 'Sheet','na_inactivation_pedotPSS');
+M = readtable('E:\data\polymer\pool.xlsx', 'Sheet','na_inactivation');
 % M = readtable('E:\data\dendritic patch\pool\pass_filter.xlsx', 'Sheet','morph');
 base_path = 'E:\data';
-save_path = 'E:\data\polymer\na_inactivation_pedotPSS';
+save_path = 'E:\data\polymer\na_inactivation';
 if ~exist(save_path, 'dir')
     mkdir(save_path)
 end
@@ -220,9 +223,9 @@ opts.Exclude = [11];
 curveNaact_pre = fit(Vstep(1,:)',mean(GNaact_pre,1)', ft, opts);
 curveNaact_post = fit(Vstep(1,:)',mean(GNaact_post,1)', ft, opts);
 
-% colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
+colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
 % colors = [[0,0,0];[159,186,149]/255]; % color for K rich polymer
-colors = [[0,0,0];[195,129,168]/255]; % color for pedotPSS
+% colors = [[0,0,0];[195,129,168]/255]; % color for pedotPSS
 % errorbar_with_fitcurve(Vstep(1,:), {GNaact_pre', GNaact_post'}, {curveNaact_pre,curveNaact_post},colors)
 
 GNain_pre = Na_in_pre./(0-53.9);
@@ -236,7 +239,7 @@ opts.Upper = [Inf, 0, Inf];
 curveNain_pre = fit(Vstep(1,:)',mean(GNain_pre(:,:),1)', ft, opts);
 curveNain_post = fit(Vstep(1,:)',mean(GNain_post(:,:),1)', ft, opts);
 
-errorbar_with_fitcurve(Vstep(1,:), {GNain_pre(:,:)', GNain_post(:,:)'}, {curveNain_pre,curveNain_post},colors)
+errorbar_with_fitcurve(Vstep(1,:), {GNain_pre(:,:)', GNain_post(:,:)'}, {curveNain_pre,curveNain_post},colors),box on
 % boxplot_pairwise(-[reshape(Na_in_pre(:,1:6),[],1)/1e3,reshape(Na_in_post(:,1:6)/1e3,[],1)], colors)
 [data_table, within_design] = gen_table_for_ranova(Vstep(1,:), {GNain_pre', GNain_post'});
 
@@ -269,7 +272,7 @@ end
 % % colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
 % colors = [[0,0,0];[159,186,149]/255]; % color for K rich polymer
 % errorbar_with_fitcurve(Vstep(1,:), {GK_pre', GK_post'}, {curveK_pre,curveK_post},colors)
-save(fullfile(save_path,'na_inactivation_pool_pedotPSS.mat'),'Vstep','GNain_pre','GNain_post','GNaact_pre','GNaact_post','GK_pre','GK_post','anova_table','p','M')
+save(fullfile(save_path,'na_inactivation_pool.mat'),'Vstep','GNain_pre','GNain_post','GNaact_pre','GNaact_post','GK_pre','GK_post','anova_table','p','M')
 %% na recovery
 clear all
 close all
@@ -278,10 +281,10 @@ addpath(genpath(fullfile(pwd,'main')))
 addpath(genpath(fullfile(pwd,'plotting')))
 
 
-M = readtable('E:\data\polymer\pool.xlsx', 'Sheet','na_recovery_pedotPSS');
+M = readtable('E:\data\polymer\pool.xlsx', 'Sheet','na_recovery');
 % M = readtable('E:\data\dendritic patch\pool\pass_filter.xlsx', 'Sheet','morph');
 base_path = 'E:\data';
-save_path = 'E:\data\polymer\na_recovery_pedotPSS';
+save_path = 'E:\data\polymer\na_recovery';
 if ~exist(save_path, 'dir')
     mkdir(save_path)
 end
@@ -321,11 +324,11 @@ for i = 1:length(tstep)
     [p(i),~] = signrank(Na_rec_pre_norm(:,i),Na_rec_post_norm(:,i));
 end
 
-% colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
+colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
 % colors = [[0,0,0];[159,186,149]/255]; % color for K rich polymer
-colors = [[0,0,0];[195,129,168]/255]; % color for pedotPSS
+% colors = [[0,0,0];[195,129,168]/255]; % color for pedotPSS
 errorbar_with_fitcurve(tstep, {Na_rec_pre_norm', Na_rec_post_norm'}, {curveNarec_pre,curveNarec_post},colors), set(gca, 'XScale','log'), box on
-save(fullfile(save_path,'na_recovery_pool_pedotPSS.mat'),'tstep','Na_rec_post_norm','Na_rec_pre_norm','anova_table','p','M')
+save(fullfile(save_path,'na_recovery_pool.mat'),'tstep','Na_rec_post_norm','Na_rec_pre_norm','anova_table','p','M')
 %% nap
 clear all
 close all
@@ -390,7 +393,7 @@ addpath(genpath(fullfile(pwd,'plotting')))
 M = readtable('E:\data\polymer\pool.xlsx', 'Sheet','ca_activation_ttx_pedotPSS');
 % M = readtable('E:\data\dendritic patch\pool\pass_filter.xlsx', 'Sheet','morph');
 base_path = 'E:\data';
-save_path = 'E:\data\polymer\ca_activation';
+save_path = 'E:\data\polymer\ca_activation_pedotPSS';
 if ~exist(save_path, 'dir')
     mkdir(save_path)
 end
@@ -426,9 +429,9 @@ opts.Upper = [Inf, 50, Inf];
 curveCa_pre = fit(Vstep(1,:)',mean(GCa_pre)', ft, opts);
 curveCa_post = fit(Vstep(1,:)',mean(GCa_post)', ft, opts);
 
-% colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
+colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
 % colors = [[0,0,0];[159,186,149]/255]; % color for K rich polymer
-colors = [[0,0,0];[195,129,168]/255]; % color for pedot PSS
+% colors = [[0,0,0];[195,129,168]/255]; % color for pedot PSS
 errorbar_with_fitcurve(Vstep(1,:), {GCa_pre', GCa_post'}, {curveCa_pre,curveCa_post},colors), box on
 [data_table, within_design] = gen_table_for_ranova(Vstep(1,:), {GCa_pre', GCa_post'});
 rm = fitrm(data_table,'measurements1-measurements30 ~ 1', 'WithinDesign', within_design);
@@ -471,7 +474,7 @@ pK = zeros(1, length(Vstep(1,:)));
 for i = 1:length(Vstep(1,:))
     [pK(i),~] = signrank(GK_pre(:,i),GK_post(:,i));
 end
-save(fullfile(save_path,'ca_activation_pedotPSS_pool.mat'),'Vstep','GCa_pre','GCa_post','anova_table_Ca','pCa','GK_pre','GK_post','anova_table_K','pK','M')
+save(fullfile(save_path,'ca_activation_pool_pedotPSS.mat'),'Vstep','GCa_pre','GCa_post','anova_table_Ca','pCa','GK_pre','GK_post','anova_table_K','pK','M')
 
 %% ca recovery
 clear all
