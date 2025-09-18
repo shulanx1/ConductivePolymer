@@ -102,12 +102,14 @@ params(8) = mean(Vrest2); % RMP, mV
 Vsag = Vrest2(1)-Vm2(floor(2/dt)+1:floor(2.5/dt), 1);
 params(2) = max(Vsag(1: floor(0.2/dt)))-mean(Vsag(floor(0.4/dt):end)); % sag ratio
 Istep_supra = -200:50:50*(n_recording-1)-200;
-if length(FR2)>=12
-    f = FR2(1:12);
-    I = Istep_supra(1:12);
+len = 14;
+
+if length(FR2)>=len
+    f = FR2(1:len);
+    I = Istep_supra(1:len);
 else
-    f = zeros(1, 12);
-    I = zeros(1, 12);
+    f = zeros(1, len);
+    I = zeros(1, len);
     f(1:length(FR2)) = FR2;
     I(1:length(FR2)) = Istep_supra;
 end

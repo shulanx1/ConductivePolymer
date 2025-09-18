@@ -281,10 +281,10 @@ addpath(genpath(fullfile(pwd,'main')))
 addpath(genpath(fullfile(pwd,'plotting')))
 
 
-M = readtable('E:\data\polymer\pool.xlsx', 'Sheet','na_recovery');
+M = readtable('E:\data\polymer\pool.xlsx', 'Sheet','na_recovery_pedotPSS');
 % M = readtable('E:\data\dendritic patch\pool\pass_filter.xlsx', 'Sheet','morph');
 base_path = 'E:\data';
-save_path = 'E:\data\polymer\na_recovery';
+save_path = 'E:\data\polymer\na_recovery_pedotPSS';
 if ~exist(save_path, 'dir')
     mkdir(save_path)
 end
@@ -324,9 +324,9 @@ for i = 1:length(tstep)
     [p(i),~] = signrank(Na_rec_pre_norm(:,i),Na_rec_post_norm(:,i));
 end
 
-colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
+% colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
 % colors = [[0,0,0];[159,186,149]/255]; % color for K rich polymer
-% colors = [[0,0,0];[195,129,168]/255]; % color for pedotPSS
+colors = [[0,0,0];[195,129,168]/255]; % color for pedotPSS
 errorbar_with_fitcurve(tstep, {Na_rec_pre_norm', Na_rec_post_norm'}, {curveNarec_pre,curveNarec_post},colors), set(gca, 'XScale','log'), box on
 save(fullfile(save_path,'na_recovery_pool.mat'),'tstep','Na_rec_post_norm','Na_rec_pre_norm','anova_table','p','M')
 %% nap

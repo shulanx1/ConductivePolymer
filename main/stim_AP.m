@@ -25,6 +25,7 @@ t = (-500*dt:dt:2500*dt)*1e3;
 
 spike_time2 = {};
 %thr2 = -10;%-10;
+%thr2 = 10; idx = 7:12 wavelength
 thr2 = 0; % idx = 122:127 nPBDF
 spike_waveform2 = {};
 FR2 = zeros(1, n_recording);

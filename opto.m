@@ -58,6 +58,188 @@ for i = 1:length(I_temp)
     [p(i),~] = signrank(f_pre(i,:)',f_post(i,:)');
 end
 save(fullfile(save_path,'excitability_opto_pool.mat'),'Rm','Cm','AP_amp','AP_width', 'Ihold','I_temp','f_pre', 'f_post', 'anova_table', 'p', 'M')
+%% excitability in vivo polymerization
+clear all
+close all
+
+addpath(genpath(fullfile(pwd,'main')))
+addpath(genpath(fullfile(pwd,'plotting')))
+
+M = readtable('E:\data\polymer\pool_opto.xlsx', 'Sheet','excitability_invivo');
+% M = readtable('E:\data\dendritic patch\pool\pass_filter.xlsx', 'Sheet','morph');
+base_path = 'E:\data';
+save_path = 'E:\data\polymer\sub&supra_invivo_polymerization';
+if ~exist(save_path, 'dir')
+    mkdir(save_path)
+end
+Rm1 = [];
+Cm1 = [];
+f_post = [];
+I = [];
+Ihold1 = [];
+AP_amp1 = [];
+AP_width1 = [];
+for i = 1:size(M, 1)
+    data_path = fullfile(base_path,M.folder(i));
+    [params_pre_temp, ~, f_pre_temp, I_temp, AP_amp_pre_temp, AP_width_pre_temp] = sub_and_supra_classify(data_path, M.date{i}, M.cell(i), M.idx(i),0,1,save_path, 0);
+    Rm1 = [Rm1;params_pre_temp(1)];
+    Cm1 = [Cm1;params_pre_temp(5)];
+    f_post = [f_post,f_pre_temp(1:12)'];
+    I = [I, I_temp(1:12)'];
+    Ihold1 = [Ihold1;params_pre_temp(7)];
+    AP_amp1 = [AP_amp1; median(AP_amp_pre_temp)];
+    AP_width1 = [AP_width1; median(AP_width_pre_temp)];
+end
+
+load('E:\data\polymer\sub&supra\excitability_pool.mat', 'Rm', 'Cm', 'f_pre','I_temp', 'AP_amp','AP_width','Ihold')
+Rm2 = {Rm(:,1),Rm1};
+Cm2 = {Cm(:,1),Cm1};
+f_pre1 = f_pre;
+Ihold2 = {Ihold(:,1), Ihold1};
+AP_amp2 = {AP_amp(:,1), AP_amp1};
+AP_width2 = {AP_width(:,1), AP_width1};
+load('E:\data\polymer\sub&supra_PEDOT\excitability_Pedot_pool.mat', 'Rm', 'Cm', 'f_pre','I_temp', 'Ihold')
+Rm2{1} = [Rm2{1};Rm(:,1)];
+Cm2{1} = [Cm2{1};Cm(:,1)];
+Ihold2{1} = [Ihold2{1};Ihold(:,1)];
+AP_amp2{1} = [AP_amp2{1};AP_amp(:,1)];
+AP_width2{1} = [AP_width2{1};AP_width(:,1)];
+f_pre1 = [f_pre1,f_pre];
+colors = [[0,0,0];[27,52,98]/255]; % color for Na rich polymer (in vivo polymerization)
+% colors = [[0,0,0];[159,186,149]/255]; % color for K rich polymer
+boxplot_with_datapoint(Rm2, colors)
+boxplot_with_datapoint(Cm2, colors)
+
+lineplot_with_shaded_errorbar(I_temp, {f_pre1,f_post}, colors), xlim([0,350])
+
+[measurements, gp1, gp2] = gen_table_for_unbalanced_anova(I_temp((I_temp>0)&(I_temp<=350)), {f_pre1((I_temp>0)&(I_temp<=350),:),f_post((I_temp>0)&(I_temp<=350),:)});
+[p,tbl,stats] = anovan(measurements, {gp1, gp2},'model','interaction');
+
+
+save(fullfile(save_path,'excitability_invivo_polymerization.mat'),'AP_amp2','AP_width2','Rm2','Cm2','I_temp','f_pre1', 'f_post','p', 'M', 'Ihold2')
+%% d patch
+clear all
+% close all
+
+addpath(genpath(fullfile(pwd,'main')))
+addpath(genpath(fullfile(pwd,'plotting')))
+
+M = readtable('E:\data\polymer\pool_opto.xlsx', 'Sheet','dpatch');
+base_path = 'E:\data';
+save_path = 'E:\data\polymer\dpatch_opto';
+if ~exist(save_path, 'dir')
+    mkdir(save_path)
+end
+decay = [];
+Rin1 = [];
+Rin2 = [];
+for i = 1:size(M, 1)
+    data_path = fullfile(base_path,M.folder(i));
+    [decay_R_pre, Rin_pooled1_pre,Rin_pooled2_pre] = sub_and_supra_ch2_dend(data_path, M.date{i}, M.cell(i),M.filename_control{i}, M.idx_control(i), 0, 1, save_path);
+    [decay_R_post,Rin_pooled1_post,Rin_pooled2_post] = sub_and_supra_ch2_dend(data_path, M.date{i}, M.cell(i),  M.filename_opto{i}, M.idx_opto(i), 0, 1, save_path);
+    decay = [decay;[decay_R_pre, decay_R_post]];
+    Rin1 = [Rin1;[Rin_pooled1_pre, Rin_pooled1_post]];
+    Rin2 = [Rin2;[Rin_pooled2_pre, Rin_pooled2_post]];
+end
+
+
+colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
+% colors = [[0,0,0];[159,186,149]/255]; % color for K rich polymer
+boxplot_pairwise(decay, colors)
+
+
+% save(fullfile(save_path,'dpatch_opto_pool.mat'),'Rin1','Rin2','decay', 'M')
+%% d patch
+% clear all
+close all
+
+addpath(genpath(fullfile(pwd,'main')))
+addpath(genpath(fullfile(pwd,'plotting')))
+
+M = readtable('E:\data\polymer\pool_opto.xlsx', 'Sheet','dpatch_ch1');
+base_path = 'E:\data';
+save_path = 'E:\data\polymer\dpatch_opto';
+if ~exist(save_path, 'dir')
+    mkdir(save_path)
+end
+decay = [];
+Rin1 = [];
+Rin2 = [];
+for i = 1:size(M, 1)
+    data_path = fullfile(base_path,M.folder(i));
+    [decay_R_pre, Rin_pooled1_pre,Rin_pooled2_pre] = sub_and_supra_ch1_dend(data_path, M.date{i}, M.cell(i), M.filename_control{i}, M.idx_control(i), 0, 1, save_path);
+    [decay_R_post, Rin_pooled1_post,Rin_pooled2_post] = sub_and_supra_ch1_dend(data_path, M.date{i}, M.cell(i), M.filename_opto{i}, M.idx_opto(i), 0, 1, save_path);
+    decay = [decay;[decay_R_pre, decay_R_post]];
+    Rin1 = [Rin1;[Rin_pooled1_pre, Rin_pooled1_post]];
+    Rin2 = [Rin2;[Rin_pooled2_pre, Rin_pooled2_post]];
+end
+
+
+colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
+% colors = [[0,0,0];[159,186,149]/255]; % color for K rich polymer
+boxplot_pairwise(decay, colors)
+
+save(fullfile(save_path,'dpatch_ch1_opto_pool.mat'),'Rin1','Rin2','decay', 'M')
+%% excitability
+clear all
+close all
+
+addpath(genpath(fullfile(pwd,'main')))
+addpath(genpath(fullfile(pwd,'plotting')))
+
+M = readtable('E:\data\polymer\pool_opto.xlsx', 'Sheet','excitability');
+% M = readtable('E:\data\dendritic patch\pool\pass_filter.xlsx', 'Sheet','morph');
+base_path = 'E:\data';
+save_path = 'E:\data\polymer\sub&supra_opto';
+if ~exist(save_path, 'dir')
+    mkdir(save_path)
+end
+Rm = [];
+Ihold = [];
+Rm_fit = [];
+Cm = [];
+f_pre = [];
+f_post = [];
+AP_amp = [];
+AP_width = [];
+I = [];
+for i = 1:size(M, 1)
+    data_path = fullfile(base_path,M.folder(i));
+    [params_pre_temp, ~, f_pre_temp, I_temp, AP_amp_pre_temp, AP_width_pre_temp] = sub_and_supra_classify(data_path, M.date{i}, M.cell(i), M.pre(i),0,1,save_path, 0);
+    [params_post_temp, ~, f_post_temp, I_temp, AP_amp_post_temp, AP_width_post_temp] = sub_and_supra_classify(data_path, M.date{i}, M.cell(i), M.post(i),0,1,save_path, 1);
+    Rm = [Rm;[params_pre_temp(1), params_post_temp(1)]];
+    Cm = [Cm;[params_pre_temp(5), params_post_temp(5)]];
+    AP_amp = [AP_amp; [median(AP_amp_pre_temp), median(AP_amp_post_temp)]];
+    AP_width = [AP_width; [median(AP_width_pre_temp), median(AP_width_post_temp)]];
+    Rm_fit = [Rm_fit;[params_pre_temp(6), params_post_temp(6)]];
+    Ihold = [Ihold;[params_pre_temp(7), params_post_temp(7)]];
+    f_pre = [f_pre,f_pre_temp'];
+    f_post = [f_post,f_post_temp'];
+    I = [I, I_temp'];
+end
+
+
+
+colors = [[0,0,0];[119,176,203]/255]; % color for Na rich polymer
+% colors = [[0,0,0];[159,186,149]/255]; % color for K rich polymer
+boxplot_pairwise(Rm, colors)
+% boxplot_pairwise(Rm_fit.*Cm/1e3)
+boxplot_pairwise(Cm, colors)
+barplot_pairwise(AP_amp((sum(isnan(AP_amp),2)==0),:), colors), ylim([50,100])
+barplot_pairwise(AP_width((sum(isnan(AP_width),2)==0),:), colors), ylim([1,3.5])
+barplot_pairwise(-Ihold, colors)
+lineplot_with_shaded_errorbar(I_temp, {f_pre,f_post}, colors), xlim([0,350])
+[data_table, within_design] = gen_table_for_ranova(I_temp, {f_pre',f_post'});
+
+rm = fitrm(data_table,'measurements1-measurements24 ~ 1', 'WithinDesign', within_design);
+AT = ranova(rm, 'WithinModel','treatment*voltage');
+anova_table = anovaTable(AT, 'DV');
+disp(anova_table);
+p = zeros(1, length(I_temp));
+for i = 1:length(I_temp)
+    [p(i),~] = signrank(f_pre(i,:)',f_post(i,:)');
+end
+save(fullfile(save_path,'excitability_opto_pool.mat'),'Rm','Cm','AP_amp','AP_width', 'Ihold','I_temp','f_pre', 'f_post', 'anova_table', 'p', 'M')
 %% na activation
 clear all
 close all

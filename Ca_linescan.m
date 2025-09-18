@@ -4,7 +4,7 @@ else    clear all
 end
 close all
 
-base_folder = 'E:\data\polymer\042125\cell2';
+base_folder = 'E:\data\polymer\082625\cell4';
 
 output_folder = fullfile(base_folder, 'Ca_output');
 if ~exist(output_folder, 'dir')

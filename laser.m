@@ -128,6 +128,6 @@ dT2 = padcat(dTemp_polymer{:});
 rm = fitrm(data_table,'measurements1-measurements22 ~ 1', 'WithinDesign', within_design);
 AT = ranova(rm, 'WithinModel','treatment*voltage');
 anova_table = anovaTable(AT, 'DV');
-disp(anova_table);
+disp(anova_table);e
 lineplot_with_shaded_errorbar(power_mW, {padcat(dTemp_tissue{:})',padcat(dTemp_polymer{:})'})
 save(fullfile(save_path, 'laser_temp_change.mat'), 'M','M1','power_polymer', 'dTemp_polymer', 'power_tissue', 'dTemp_tissue','power_pool', 'power_mW','dTemp_polymer', 'dTemp_tissue');

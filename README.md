@@ -1,6 +1,6 @@
 # ConductivePolymer
 
-* Ex vivo haracterization of neuronal electrical properties under modulation of conductive polymers.
+* Code for data analysis, pooling, statistical tests and plotting for the manuscript "Blood-Catalyzed n-Doped Polymers for Reversible Optical Neural Control".
 
 ### Contact ###
 

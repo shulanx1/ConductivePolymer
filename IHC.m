@@ -94,3 +94,94 @@ rm = fitrm(data_table,'measurements1-measurements10 ~ 1', 'WithinDesign', within
 AT = ranova(rm, 'WithinModel','treatment*voltage');
 anova_table = anovaTable(AT, 'DV');
 disp(anova_table);
+%% ki67
+% M = readtable('E:\data\polymer\pool_IHC.xlsx', 'Sheet','Sheet1');
+clear all
+close all
+
+addpath(genpath(fullfile(pwd, 'nd2read')))
+img_path = 'E:\data\polymer\IHC\skin';
+result_path = 'E:\data\polymer\IHC\skin\result';
+gp = {'control',  'polymer','initiate', 'monomer'};
+area = cell(1,4);
+area_green = cell(1,4);
+area_ratio = cell(1,4);
+puncta = cell(1,4);
+puncta_norm = cell(1,4);
+gps = cell(1,4);
+
+for i = 1:4
+    img_files = dir(fullfile(img_path,gp{i}, '*.nd2'));
+    txt_files = dir(fullfile(result_path,sprintf('%s*.txt', gp{i})));
+    for j = 1:length(img_files)
+        pix_per_micron = 1.6091;
+
+        s = readtable(fullfile(txt_files(j).folder, txt_files(j).name),'Delimiter','\t','HeaderLines',1);
+        x_coords = s.Var8*pix_per_micron;
+        y_coords = s.Var9*pix_per_micron;
+        
+        [img_ch1, img_ch2] = nd2read(fullfile(img_files(j).folder, img_files(j).name));
+        area{i}(j) = length(find(img_ch1>=350))/(pix_per_micron^2)/1e6;
+        area_green{i}(j) = length(find(img_ch2>=350))/(pix_per_micron^2)/1e6;
+        area_ratio{i}(j) = area_green{i}(j)/area{i}(j);
+        puncta{i}(j) = length(x_coords);
+        puncta_norm{i}(j) = puncta{i}(j)/area{i}(j);
+        gps{i}(j) = i;
+    end
+
+end
+
+colors = [[0,0,0];[119,177,204];[220,165,195];[138,62,130]];
+colors = colors/256;
+boxplot_with_datapoint(puncta_norm, colors)
+
+
+[p,~,stats] = anovan(cell2mat(puncta_norm), {cell2mat(gps)});
+[results,~,~,gnames] = multcompare(stats);
+
+save(fullfile(result_path, 'ki67_pool.mat'), 'puncta', 'puncta_norm', 'area', 'area_green', 'area_ratio')
+%% live dead cell assay
+% M = readtable('E:\data\polymer\pool_IHC.xlsx', 'Sheet','Sheet1');
+clear all
+close all
+
+
+img_path = 'E:\data\polymer\IHC\live_dead_assay\denoised';
+result_path = 'E:\data\polymer\IHC\live_dead_assay\results';
+gp = {'control1', 'nPBDF','initiate', 'BDF', 'ETOH', 'heated'};
+area_red = cell(1,length(gp));
+area_green = cell(1,length(gp));
+area_ratio = cell(1,length(gp));
+
+
+for i = 1:length(gp)
+    img_files_ch1 = dir(fullfile(img_path,gp{i}, '*_red.tif'));
+    img_files_ch2 = dir(fullfile(img_path,gp{i}, '*_green.tif'));
+    for j = 1:length(img_files_ch1)
+        
+        img_ch1 = imread(fullfile(img_files_ch1(j).folder, img_files_ch1(j).name));
+        img_ch2 = imread(fullfile(img_files_ch2(j).folder, img_files_ch2(j).name));
+        area_red{i}(j) = length(find(img_ch1>=50));
+        area_green{i}(j) = length(find(img_ch2>=50));        
+        area_ratio{i}(j) = area_green{i}(j)/area_red{i}(j);
+    end
+
+end
+
+colors = [[0,0,0];[119,177,204];[220,165,195];[138,62,130];[256,0,0]];
+colors = colors/256;
+area_plot = cell(1,5);
+area_plot{1} = area_ratio{1};
+area_plot(2:4) = area_ratio(2:4);
+area_plot{5} = cell2mat(area_ratio(5:6));
+boxplot_with_datapoint(area_plot, colors)
+
+gps = cell(1,5);
+for i = 1:5
+    gps{i} = i*ones(size(area_plot{i}));
+end
+
+[p,~,stats] = anovan(cell2mat(area_plot), {cell2mat(gps)});
+[results,~,~,gnames] = multcompare(stats, 'CriticalValueType', 'lsd');
+
+save(fullfile(result_path, 'livedead_pool.mat'), 'area_red', 'area_green', 'area_ratio', 'gp')
